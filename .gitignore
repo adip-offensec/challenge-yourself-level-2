@@ -1,0 +1,14 @@
+.vagrant/
+*.vdi
+*.vmdk
+*.box
+*.log
+tools/chisel_*
+tools/mimikatz_*
+*.ova
+*.ovf
+Vagrantfile.local
+.vagrant_user
+.vagrant_provisioners
+*.tmp
+*.swp
