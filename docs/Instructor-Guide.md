@@ -32,7 +32,25 @@ This guide provides detailed information for instructors or lab administrators w
 - ~10 GB free disk space for base boxes + provisioned disks.
 - Host‑only networks `vboxnet1` and `vboxnet2` exist (Vagrant will create them).
 
-### 2. Build the Lab
+### 2. Provisioning Order
+Vagrant by default starts all VMs in parallel. Because the workstation depends on the DC being fully promoted, it is **strongly recommended** to provision the machines sequentially:
+
+```bash
+vagrant up web01
+vagrant up dc
+vagrant up workstation
+```
+
+Alternatively, use `vagrant up --no‑parallel` to run them sequentially.
+
+If you already ran `vagrant up` and the workstation failed to join the domain, reprovision it after the DC is ready:
+
+```bash
+vagrant provision dc   # Ensure DC is fully configured
+vagrant provision workstation
+```
+
+### 3. Build the Lab
 ```bash
 cd /path/to/lab
 vagrant up
@@ -44,7 +62,7 @@ vagrant up
   - `dc`: 10–15 minutes (AD promotion).
   - `workstation`: 5–10 minutes (domain join, scheduled task).
 
-### 3. Verify Each VM
+### 4. Verify Each VM
 
 #### web01
 ```bash
@@ -70,7 +88,7 @@ cat /root/creds.txt  # Should show corp\web_admin:P@ssw0rd
   ```
 - Verify `C:\Windows\System32\flag_system.txt` exists.
 
-### 4. Network Connectivity
+### 5. Network Connectivity
 From the **attacker** (host machine):
 ```bash
 ping 192.168.1.10  # Should succeed
