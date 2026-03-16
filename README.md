@@ -1,21 +1,51 @@
-# Red‑Team Lab: Multi‑Network Domain Compromise
-
-A fully automated, Vagrant‑based lab that simulates a realistic attack path from external web exploitation to complete Active Directory takeover.
+<h1 align="center">
+  <br>
+  <a href="https://github.com/adip-offensec">
+    <img src="https://github.com/user-attachments/assets/0671daea-0e7a-4862-8bb3-613cc5a4569a" alt="challenge-yourself-level-2" width="620">
+  </a>
+  <br><br>
+  challenge-yourself-level-2
+</h1>
+<h4 align="center">
+  Realistic Red Team Lab: Multi-Network Domain Compromise<br>
+  Complete attack chain: CVE-2021-41773 → Root → Pivot → SYSTEM → Domain Admin
+</h4>
+<p align="center">
+  <strong>Created by</strong><br><br>
+  <a href="https://github.com/adip-offensec">adip-offensec</a>
+  ×
+  <a href="https://github.com/manojxshrestha">manojxshrestha</a>
+</p>
+<p align="center">
+  <a href="https://github.com/adip-offensec/challenge-yourself-level-2/stargazers">
+    <img src="https://img.shields.io/github/stars/adip-offensec/challenge-yourself-level-2?style=social" alt="GitHub stars">
+  </a>
+  <a href="https://github.com/adip-offensec/challenge-yourself-level-2/forks">
+    <img src="https://img.shields.io/github/forks/adip-offensec/challenge-yourself-level-2?style=social" alt="GitHub forks">
+  </a>
+  <img src="https://img.shields.io/badge/Vagrant-✓-blue" alt="Vagrant">
+  <img src="https://img.shields.io/badge/VirtualBox-✓-blue" alt="VirtualBox">
+  <img src="https://img.shields.io/badge/Red%20Team%20Lab-Active%20Directory-orange" alt="Red Team Lab">
+</p>
+<br>
 
 ## Lab Overview
 
+A fully automated Vagrant-based red team lab that simulates a realistic attack path from external web exploitation to complete Active Directory domain compromise.
+
 ### Scenario
-You are a red‑team operator tasked with penetrating a corporate network. The only exposed asset is a web server (WEB01) running a vulnerable version of Apache. Your goal is to:
-1. Gain initial access via CVE‑2021‑41773 (Apache path traversal).
-2. Escalate privileges on WEB01.
-3. Pivot into the internal network (`10.0.20.0/24`).
-4. Move laterally to a Windows 10 workstation.
-5. Dump credentials, crack a Domain Admin hash, and compromise the Domain Controller.
+You are a red team operator tasked with penetrating a corporate network. The only exposed asset is a web server (WEB01) running a vulnerable version of Apache. Your goal is to:
+
+1. Gain initial access via **CVE-2021-41773** (Apache path traversal)
+2. Escalate privileges to root on WEB01
+3. Pivot into the internal network (`10.0.20.0/24`)
+4. Move laterally to the Windows 10 workstation
+5. Dump credentials and compromise the Domain Controller
 
 ### Network Topology
 ```
 External Network (192.168.1.0/24)
-├── Attacker (your Kali/host machine) – 192.168.1.100 (not provisioned)
+├── Attacker (your Kali / host machine) – 192.168.1.100
 └── WEB01 (Ubuntu 20.04) – 192.168.1.10 (eth0)
 
 Internal Network (10.0.20.0/24)
@@ -24,192 +54,97 @@ Internal Network (10.0.20.0/24)
 └── WORKSTATION (Windows 10) – 10.0.20.20
 ```
 
-**Connectivity rules:**
-- Attacker can only reach WEB01’s external interface (`192.168.1.10`).
-- WEB01 can talk to both networks.
-- Internal machines cannot initiate connections to the external network.
-- All internal machines can communicate with each other.
+**Connectivity Rules:**
+- Attacker can only reach WEB01 on the external interface (`192.168.1.10`)
+- WEB01 can communicate with both networks (pivot point)
+- Internal machines cannot reach the external network
+- All internal machines can communicate freely with each other
 
-## Setup
+## Quick Start
 
-### Automated Setup Script
-The lab includes a setup script that checks dependencies and downloads required tools.
-
+### Automated Setup (Recommended)
 ```bash
 chmod +x setup-lab.sh
 ./setup-lab.sh
 ```
 
-The script will:
-- Verify Vagrant and VirtualBox are installed.
-- Download Chisel and Mimikatz binaries into the `tools/` directory.
-- Provide guidance on network configuration.
-- Optionally start the lab for you.
-
 ### Manual Setup
-
-#### 1. Prerequisites
-- [VirtualBox](https://www.virtualbox.org/) (≥ 6.1)
-- [Vagrant](https://www.vagrantup.com/) (≥ 2.2.10)
-- At least **10 GB free disk space** and **9 GB RAM** (WEB01: 2GB, DC: 4GB, WORKSTATION: 3GB)
-- A separate attacker machine (Kali Linux, host machine, or another VM) on the `192.168.1.0/24` network.
-
-#### 2. Download Required Tools
-Before starting the lab, download the necessary penetration‑testing tools:
-
-```bash
-cd tools
-./download-tools.sh
-```
-
-This downloads:
-- **Chisel** (Linux & Windows) – SOCKS proxy for pivoting.
-- **Mimikatz** (Windows) – Credential‑dumping tool.
-
-#### 3. Network Configuration
-The lab creates two isolated networks:
-
-| Network | Subnet | Type | Purpose |
-|---------|--------|------|---------|
-| External | `192.168.1.0/24` | Host‑only (Vagrant managed) | Attacker ↔ WEB01 |
-| Internal | `10.0.20.0/24` | Internal network (isolated) | Internal communication |
-
-**Attacker setup:**
-Your attacker machine must be on the same host‑only network as WEB01’s external interface.
-
-**Option A (recommended):** Use your host machine as the attacker.
-1. Open VirtualBox → **File** → **Host Network Manager**.
-2. Create a host‑only network with:
-   - IPv4 Address: `192.168.1.1`
-   - IPv4 Network Mask: `255.255.255.0`
-   - DHCP server **disabled**.
-3. Configure your host’s network adapter (on the host‑only network) with a static IP, e.g., `192.168.1.100`.
-
-**Option B:** Use a separate Kali VM.
-- Attach the Kali VM’s NIC to the same host‑only network (Vagrant will create one named `vboxnet1`).
-- Set Kali’s IP to `192.168.1.100` (or any free address in `192.168.1.0/24`).
-
-## Quick Start
-
-1. **Clone/download** this lab to your host.
-2. **Open a terminal** in the lab directory.
-3. **Run the setup script** (or follow manual steps above).
-4. **Start the lab:**
+1. Clone this repository
+2. Download required tools:
+   ```bash
+   cd tools
+   ./download-tools.sh
+   ```
+3. Start the lab:
    ```bash
    vagrant up
    ```
-   This downloads the base boxes (≈8 GB) and provisions all three VMs. The first run may take **30–60 minutes** depending on your internet speed.
+   *First run will download ~8 GB of base boxes and may take 30–60 minutes.*
 
-5. **Verify** the VMs are running:
+4. Verify setup:
    ```bash
-   vagrant status
+   ./verify.sh
    ```
 
-6. **Test connectivity** from your attacker machine:
-   ```bash
-   ping 192.168.1.10
-   ```
+## Prerequisites
+- VirtualBox ≥ 6.1
+- Vagrant ≥ 2.2.10
+- Minimum **9 GB RAM** and **10 GB** free disk space
+- Attacker machine (Kali Linux recommended) on the `192.168.1.0/24` network
 
 ## Lab Components
 
-### WEB01 (Ubuntu 20.04)
-- **External IP:** 192.168.1.10
-- **Internal IP:** 10.0.20.10
-- **Services:** Apache 2.4.49 (vulnerable to CVE‑2021‑41773)
-- **Misconfigurations:**
-  - World‑writable cron script (`/usr/local/bin/backup.sh`) running as root.
-  - Credentials stored in `/root/creds.txt`.
+| Machine       | OS                  | External IP     | Internal IP    | Key Features / Misconfigurations |
+|---------------|---------------------|-----------------|----------------|----------------------------------|
+| **WEB01**     | Ubuntu 20.04        | 192.168.1.10    | 10.0.20.10     | Apache 2.4.49 (CVE-2021-41773), world-writable root cron job |
+| **DC**        | Windows Server 2019 | -               | 10.0.20.5      | Domain Controller (`corp.local`), SMB/WinRM exposed internally |
+| **WORKSTATION**| Windows 10         | -               | 10.0.20.20     | Writable scheduled task running as SYSTEM, Domain Admin creds in memory |
 
-### DC (Windows Server 2019)
-- **IP:** 10.0.20.5
-- **Domain:** `corp.local`
-- **Users:**
-  - `bob` – regular user, password `Summer2024!`
-  - `backup_admin` – Domain Admin, password `Winter2024!`
-  - `web_admin` – domain user, password `P@ssw0rd`
-- **Firewall:** Allows SMB (445) and WinRM (5985) from internal network.
-
-### WORKSTATION (Windows 10)
-- **IP:** 10.0.20.20
-- **Domain‑joined:** `corp.local`
-- **Misconfigurations:**
-  - Writable scheduled‑task folder (`C:\ProgramData\Tasks`).
-  - Scheduled task runs `backup.bat` as SYSTEM every minute.
-  - Domain Admin credentials (`backup_admin`) kept in memory for dumping.
+### Domain Credentials (Discover during the lab)
+- `bob` : `Summer2024!`
+- `web_admin` : `P@ssw0rd`
+- `backup_admin` (Domain Admin) : `Winter2024!`
 
 ## Objectives & Flags
-Detailed objectives and flag locations are in [CHALLENGE.md](./CHALLENGE.md).
+
+Detailed objectives and flag locations are available in **[CHALLENGE.md](./CHALLENGE.md)**
 
 ### Milestone Flags
-1. **WEB01‑root** – After obtaining root on WEB01.
-2. **WORKSTATION‑system** – After achieving SYSTEM on the Windows 10 workstation.
-3. **DC‑domain** – After compromising the Domain Controller.
+| Milestone             | Objective                              | Flag Location                          |
+|-----------------------|----------------------------------------|----------------------------------------|
+| WEB01-root            | Root on external web server            | `/root/flag.txt`                       |
+| WORKSTATION-system    | SYSTEM on Windows 10 workstation       | `C:\flags\stage2.txt`                  |
+| DC-domain             | Full Domain Controller compromise      | `C:\Users\Administrator\Desktop\final.txt` |
 
-## Tools Provided
-The `tools/` directory contains pre‑compiled binaries for convenience:
-- `chisel_linux_amd64` – SOCKS proxy (Linux).
-- `chisel_windows_amd64.exe` – SOCKS proxy (Windows).
-- `mimikatz_trunk.zip` – Credential‑dumping tool.
+## Tools Included
+The `tools/` directory contains:
+- `chisel_linux_amd64` & `chisel_windows_amd64.exe` – SOCKS proxy for pivoting
+- `mimikatz_trunk.zip` – Credential dumping
 
-These are synced to `/vagrant/tools` (Linux) and `C:\vagrant\tools` (Windows) inside each VM.
+These tools are automatically synced to `/vagrant/tools` (Linux) and `C:\vagrant\tools` (Windows).
 
 ## Documentation
-- [CHALLENGE.md](./CHALLENGE.md) – Red‑team scenario, hints, flag locations.
-- [Attack‑Walkthrough.md](./docs/Attack-Walkthrough.md) – Step‑by‑step solution.
-- [Instructor‑Guide.md](./docs/Instructor-Guide.md) – Setup notes, troubleshooting.
-
-## Verification Script
-After provisioning, you can run a quick connectivity check:
-
-```bash
-./verify.sh
-```
-
-This script verifies that each VM is reachable and flags are present.
+- **[CHALLENGE.md](./CHALLENGE.md)** – Full scenario, objectives & hints
+- **[docs/Attack-Walkthrough.md](./docs/Attack-Walkthrough.md)** – Step-by-step solution (instructors only)
+- **[docs/Instructor-Guide.md](./docs/Instructor-Guide.md)** – Advanced setup & troubleshooting
 
 ## Troubleshooting
+- **Vagrant timeout on Windows machines** → Run `vagrant up dc` first, then `vagrant up workstation`
+- **Cannot reach 192.168.1.10** → Configure your attacker on the same host-only network (`192.168.1.0/24`)
+- **Internal network unreachable** → Check `ip addr show eth1` on WEB01
+- **Mimikatz blocked** → Defender is disabled via provisioning, but you can manually exclude `C:\vagrant\tools`
 
-### Vagrant times out during Windows provisioning
-Increase the `winrm` timeout or check that the Windows boxes are downloaded correctly. You can also run provisioning in stages:
-
+Full reset:
 ```bash
-vagrant up web01
-vagrant up dc
-vagrant up workstation
+vagrant destroy -f && vagrant up
 ```
 
-### Apache exploit fails
-Ensure Apache is running on WEB01:
+## Security Warning
+⚠️ **WARNING**: This lab contains intentionally vulnerable systems and real exploitation techniques. Use **only** in isolated environments for educational and authorized penetration testing purposes. Do not expose these VMs to the internet or any untrusted network.
 
-```bash
-vagrant ssh web01
-sudo /usr/local/apache2/bin/apachectl status
-```
+## License
+Educational Use Only — See LICENSE file for details.
 
-### Internal network unreachable
-Verify that WEB01’s second NIC is up and has IP `10.0.20.10`:
+---
 
-```bash
-vagrant ssh web01
-ip addr show eth1
-```
-
-### Windows Defender blocks Mimikatz
-Windows Defender is disabled in the provisioning scripts. If it re‑enables, add an exclusion for `C:\vagrant\tools` or disable real‑time protection manually.
-
-### Domain join fails (WORKSTATION)
-Ensure the DC is fully provisioned before starting the workstation. If needed, run `vagrant provision dc` and then `vagrant provision workstation`.
-
-## Cleaning Up
-To stop all VMs:
-```bash
-vagrant halt
-```
-
-To destroy them (delete all disks):
-```bash
-vagrant destroy -f
-```
-
-## License & Disclaimer
-This lab is for educational and authorized penetration‑testing practice only. Do not use the techniques or code against systems you do not own or have explicit permission to test.
+**Happy Hacking!**  
